@@ -35,6 +35,7 @@ import sys
 import requests
 import argparse
 import string
+import json
 import pymisp
 from pymisp import MISPObject
 from pymisp import PyMISP
@@ -50,46 +51,70 @@ def splash():
 def init(misp_url, misp_key):
     return PyMISP(misp_url, misp_key, misp_verifycert, 'json')
 
-def create_objects(vt_results, event_dict, comments):
+def create_objects(vt_results, event_dict, comments, forced):
     event = MISPEvent()
     event.from_dict(**event_dict)
     vt_data = ''
 
-    print ("- Creating objects")
-    # Add VT Object
-    for obj_loop in vt_results['scans']:
-        if (vt_results['scans'][obj_loop]['detected'] == True):
-            vt_data += "%s (%s) Detection: %s\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'], vt_results['scans'][obj_loop]['result'])
-        else:
-            vt_data += "%s (%s) Detection: No detection\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'])
+    print ("- Creating object(s)")
+    if (vt_results['response_code'] == 1):
+        # Add VT Object
+        for obj_loop in vt_results['scans']:
+            if (vt_results['scans'][obj_loop]['detected'] == True):
+                vt_data += "%s (%s) Detection: %s\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'], vt_results['scans'][obj_loop]['result'])
+            else:
+                vt_data += "%s (%s) Detection: No detection\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'])
 
-    detection = "%s/%s"% (vt_results['positives'],vt_results['total'])
-    vt_comment = "File %s"% (vt_results['md5'])
-    misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5)
-    obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'], distribution=5)
-    misp_object.add_attribute('detection-ratio', value=detection, distribution=5)
-    misp_object.add_attribute('comment', value=vt_data, disable_correlation=True, distribution=5)
-    misp_object.add_attribute('last-submission', value=vt_results['scan_date'], disable_correlation=True, distribution=5)
-    vt_obj_uuid = misp_object.uuid
-    print ("\t* Permalink: " + vt_results['permalink'])
-    print ("\t* Detection: " + detection)
-    print ("\t* Last scan: " + vt_results['scan_date'] + "\r\n")
+        detection = "%s/%s"% (vt_results['positives'],vt_results['total'])
+        vt_comment = "File %s"% (vt_results['md5'])
+        misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5)
+        obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'], distribution=5)
+        misp_object.add_attribute('detection-ratio', value=detection, distribution=5)
+        misp_object.add_attribute('comment', value=vt_data, disable_correlation=True, distribution=5)
+        misp_object.add_attribute('last-submission', value=vt_results['scan_date'], disable_correlation=True, distribution=5)
+        vt_obj_uuid = misp_object.uuid
+        print ("\t* Permalink: " + vt_results['permalink'])
+        print ("\t* Detection: " + detection)
+        print ("\t* Last scan: " + vt_results['scan_date'] + "\r\n")
 
     # Add File Object
     misp_object = event.add_object(name='file', comment=comments)
-    obj_attr = misp_object.add_attribute('md5', value=vt_results['md5'], distribution=5)
-    misp_object.add_attribute('sha1', value=vt_results['sha1'], distribution=5)
-    misp_object.add_attribute('sha256', value=vt_results['sha256'], distribution=5)
-    misp_object.add_reference(vt_obj_uuid, 'analysed-with', 'Expanded with virustotal data')
-    print ("\t* MD5: " + vt_results['md5'])
-    print ("\t* SHA1: " + vt_results['sha256'])
-    print ("\t* SHA256: " + vt_results['sha256'])
-    print ("\t------------")
-    print ("\t* VirusTotal detections: ")
-    vt_detects = vt_data.split('\n')
-    for vt_detect in vt_detects:
-        print ("\t\t" + vt_detect)
-    print ("\t------------")
+#    if(vt_results['md5']):
+    obj_attr = []
+    try:
+        misp_object.add_attribute('md5', value=vt_results['md5'], distribution=5)
+    except KeyError:
+        vt_results['md5'] = None
+
+    try:
+        misp_object.add_attribute('sha1', value=vt_results['sha1'], distribution=5)
+    except KeyError:
+        vt_results['sha1'] = None
+
+    try:
+        misp_object.add_attribute('sha256', value=vt_results['sha256'], distribution=5)
+    except KeyError:
+        vt_results['sha256'] = None
+
+    if (vt_results['response_code'] == 1):
+        misp_object.add_reference(vt_obj_uuid, 'analysed-with', 'Expanded with virustotal data')
+
+    if not (vt_results['md5'] == None):
+        print ("\t* MD5: " + vt_results['md5'])
+
+    if not (vt_results['sha1'] == None):
+        print ("\t* SHA1: " + vt_results['sha1'])
+
+    if not (vt_results['sha256'] == None):
+        print ("\t* SHA256: " + vt_results['sha256'])
+
+    if (vt_results['response_code'] == 1):
+        print ("\t------------")
+        print ("\t* VirusTotal detections: ")
+        vt_detects = vt_data.split('\n')
+        for vt_detect in vt_detects:
+            print ("\t\t" + vt_detect)
+        print ("\t------------")
 
     try:
         # Submit the File and VT Objects to MISP
@@ -100,7 +125,7 @@ def create_objects(vt_results, event_dict, comments):
 
     print ("- The MISP objects seems to have been added correctly to the event.... \r\n\r\n")
 
-def vt_query(resource_value):
+def vt_query(resource_value, forced):
     params = {'apikey': vt_key, 'resource': resource_value}
     headers = {
       "Accept-Encoding": "gzip, deflate",
@@ -110,11 +135,15 @@ def vt_query(resource_value):
       params=params, headers=headers)
     json_response = response.json()
     if(json_response['response_code'] == 1):
+        print ("- The artefact was found on Virustotal")
         return(json_response)
     else:
-        print ("Quitting -> The artifact was currently not present on VT")
-        sys.exit()
-    print ("- The artefact was found on Virustotal")
+        if(forced):
+            print ("- The artefact was NOT found on VirusTotal - Continues due to foce mode")
+        else:
+            print ("Quitting -> The artifact was currently not present on VT")
+            sys.exit()
+
 
 def is_in_misp_event(misp_event):
     found = False
@@ -130,6 +159,7 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--checksum", help="The checksum value has to be MD5, SHA-1 or SHA-256 for checking on VT")
     parser.add_argument("-u", "--uuid", help="The UUID of the event in MISP")
     parser.add_argument("-a", "--comment", help="Add comment to the file object, remember to enclose string in \"\" or ''")
+    parser.add_argument("-f", "--force", help="Even if the hash is not found on VirusTotal still create the hash given as a file object", action='store_true')
     args = parser.parse_args()
 
     if (args.comment):
@@ -169,7 +199,21 @@ if __name__ == '__main__':
         print ('- Checksum ' + args.checksum + ' was not detected in the event')
 
     # Query VT API
-    vt_data = vt_query(args.checksum)
+    vt_data = vt_query(args.checksum, args.force)
+
+    # If in force mode and nothing is returned, we add the checksum value to the correct object
+    if not (vt_data):
+        vt_data = {}
+        vt_data['response_code'] = 0
+        if (len(args.checksum) == 32):
+            vt_data['md5'] = args.checksum
+        elif (len(args.checksum) == 40):
+            vt_data['sha1'] = args.checksum
+        elif (len(args.checksum) == 64):
+            vt_data['sha256'] = args.checksum
+        else:
+            print ("An error occoured in forced mode, while checking length of checksum")
+            sys.exit()
 
     # Create the objects in the event
-    create_objects(vt_data, misp_event, comments)
+    create_objects(vt_data, misp_event, comments, args.force)

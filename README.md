@@ -27,3 +27,10 @@ Sample Usage:
 ```
 python3 vt2misp.py -c 7657fcb7d772448a6d8504e4b20168b8 -u 5b51eadd-7e9c-4015-b49c-3df79f590eb0
 ```
+
+The tool will exit without adding anything to MISP in case the checksum(MD5,
+SHA1, SHA256) was not found on VirusTotal. In some cases you might still
+want the value you have added to MISP then use the option -f or --force 
+
+This allows you to easilier add additional informaiton should you get it
+later and it will then allready be in object format.
