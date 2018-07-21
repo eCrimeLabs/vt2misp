@@ -25,18 +25,7 @@ vt_key = 'API KEY'
 
 Sample Usage:
 ```
-python3 vt2misp.py -u 5b53275a-003c-4dcc-b4ce-710f9f590eb0 -a "USBGuard" --force -c 7657fcb7d772448a6d8504e4b20168b8
-
-```
-
-The tool will exit without adding anything to MISP in case the checksum(MD5, SHA1, SHA256) was not found on VirusTotal. 
-In some cases you might still want the value you have added to MISP then use the option -f or --force 
-
-This allows you to easilier add additional informaiton should you get it later and it will then allready be in object format.
-
-*Sample output from commandline on what data are being inserted into the MISP instance*
-
-```
+~# python3 vt2misp.py -u 5b53275a-003c-4dcc-b4ce-710f9f590eb0 -a "USBGuard" --force -c 7657fcb7d772448a6d8504e4b20168b8
 Virustotal to MISP
 (c)2018 eCrimeLabs
 https://www.ecrimelabs.com
@@ -128,3 +117,8 @@ https://www.ecrimelabs.com
 	------------
 - The MISP objects seems to have been added correctly to the event.... 
 ```
+
+The tool will exit without adding anything to MISP in case the checksum(MD5, SHA1, SHA256) was not found on VirusTotal. 
+In some cases you might still want the value you have added to MISP then use the option -f or --force 
+
+This allows you to easilier add additional informaiton should you get it later and it will then allready be in object format.
