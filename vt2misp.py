@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 """
- Fetches data from VT based on a MD5, SHA1 or SHA256
+ Fetches data from VT based on a single MD5, SHA1 or SHA256
  and adds the data into two MISP objects on a defined event
  - File object
  - VirusTotal object
+
+Afterwards it will create a Relation between those two (file -> analysed-with -> virustotal-report)
 
 MIT License
 
@@ -32,6 +34,7 @@ import re
 import sys
 import requests
 import argparse
+import string
 import pymisp
 from pymisp import MISPObject
 from pymisp import PyMISP
@@ -47,32 +50,46 @@ def splash():
 def init(misp_url, misp_key):
     return PyMISP(misp_url, misp_key, misp_verifycert, 'json')
 
-def create_objects(vt_results, event_dict):
+def create_objects(vt_results, event_dict, comments):
     event = MISPEvent()
     event.from_dict(**event_dict)
+    vt_data = ''
 
     print ("- Creating objects")
     # Add VT Object
+    for obj_loop in vt_results['scans']:
+        if (vt_results['scans'][obj_loop]['detected'] == True):
+            vt_data += "%s (%s) Detection: %s\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'], vt_results['scans'][obj_loop]['result'])
+        else:
+            vt_data += "%s (%s) Detection: No detection\r\n"% (obj_loop, vt_results['scans'][obj_loop]['version'])
+
     detection = "%s/%s"% (vt_results['positives'],vt_results['total'])
     vt_comment = "File %s"% (vt_results['md5'])
-    misp_object = event.add_object(name='virustotal-report', comment=vt_comment)
-    obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'])
-    misp_object.add_attribute('detection-ratio', value=detection)
-    misp_object.add_attribute('last-submission', value=vt_results['scan_date'])
+    misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5)
+    obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'], distribution=5)
+    misp_object.add_attribute('detection-ratio', value=detection, distribution=5)
+    misp_object.add_attribute('comment', value=vt_data, disable_correlation=True, distribution=5)
+    misp_object.add_attribute('last-submission', value=vt_results['scan_date'], disable_correlation=True, distribution=5)
     vt_obj_uuid = misp_object.uuid
     print ("\t* Permalink: " + vt_results['permalink'])
     print ("\t* Detection: " + detection)
     print ("\t* Last scan: " + vt_results['scan_date'] + "\r\n")
 
     # Add File Object
-    misp_object = event.add_object(name='file')
-    obj_attr = misp_object.add_attribute('md5', value=vt_results['md5'])
-    misp_object.add_attribute('sha1', value=vt_results['sha1'])
-    misp_object.add_attribute('sha256', value=vt_results['sha256'])
+    misp_object = event.add_object(name='file', comment=comments)
+    obj_attr = misp_object.add_attribute('md5', value=vt_results['md5'], distribution=5)
+    misp_object.add_attribute('sha1', value=vt_results['sha1'], distribution=5)
+    misp_object.add_attribute('sha256', value=vt_results['sha256'], distribution=5)
     misp_object.add_reference(vt_obj_uuid, 'analysed-with', 'Expanded with virustotal data')
     print ("\t* MD5: " + vt_results['md5'])
     print ("\t* SHA1: " + vt_results['sha256'])
     print ("\t* SHA256: " + vt_results['sha256'])
+    print ("\t------------")
+    print ("\t* VirusTotal detections: ")
+    vt_detects = vt_data.split('\n')
+    for vt_detect in vt_detects:
+        print ("\t\t" + vt_detect)
+    print ("\t------------")
 
     try:
         # Submit the File and VT Objects to MISP
@@ -84,7 +101,7 @@ def create_objects(vt_results, event_dict):
     print ("- The MISP objects seems to have been added correctly to the event.... \r\n\r\n")
 
 def vt_query(resource_value):
-    params = {'apikey': vt_key, 'resource': resource_value, 'allinfo': '1'}
+    params = {'apikey': vt_key, 'resource': resource_value}
     headers = {
       "Accept-Encoding": "gzip, deflate",
       "User-Agent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
@@ -112,7 +129,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--checksum", help="The checksum value has to be MD5, SHA-1 or SHA-256 for checking on VT")
     parser.add_argument("-u", "--uuid", help="The UUID of the event in MISP")
+    parser.add_argument("-a", "--comment", help="Add comment to the file object, remember to enclose string in \"\" or ''")
     args = parser.parse_args()
+
+    if (args.comment):
+        comments = args.comment
+    else:
+        comments = ""
+
     if re.fullmatch("(([a-fA-F0-9]{64})|([a-fA-F0-9]{40})|([a-fA-F0-9]{32}))", args.checksum, re.VERBOSE | re.MULTILINE):
         print ("- Checking if checksum is valid - true")
     else:
@@ -144,5 +168,8 @@ if __name__ == '__main__':
     else:
         print ('- Checksum ' + args.checksum + ' was not detected in the event')
 
+    # Query VT API
     vt_data = vt_query(args.checksum)
-    create_objects(vt_data, misp_event)
+
+    # Create the objects in the event
+    create_objects(vt_data, misp_event, comments)
