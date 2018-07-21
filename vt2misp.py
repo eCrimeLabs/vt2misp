@@ -1,11 +1,36 @@
 #!/usr/bin/python3
+"""
+ Fetches data from VT based on a MD5, SHA1 or SHA256
+ and adds the data into two MISP objects on a defined event
+ - File object
+ - VirusTotal object
+
+MIT License
+
+Copyright (c) 2018 Dennis Rand (https://www.ecrimelabs.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 
 import re
 import sys
 import requests
-import hashlib
-import numbers
-import json
 import argparse
 import pymisp
 from pymisp import MISPObject
@@ -13,7 +38,13 @@ from pymisp import PyMISP
 from pymisp import MISPEvent
 from keys import misp_url, misp_key, misp_verifycert, vt_url, vt_key
 
-def init(url, key):
+def splash():
+    print ('Virustotal to MISP')
+    print ('(c)2018 eCrimeLabs')
+    print ('https://www.ecrimelabs.com')
+    print ("----------------------------------------\r\n")
+
+def init(misp_url, misp_key):
     return PyMISP(misp_url, misp_key, misp_verifycert, 'json')
 
 def create_objects(vt_results, event_dict):
@@ -50,7 +81,7 @@ def create_objects(vt_results, event_dict):
         print ("An error occoured when updating the event")
         sys.exit()
 
-    print ("- The MISP objects seems to have been added correctly to the event.... ")
+    print ("- The MISP objects seems to have been added correctly to the event.... \r\n\r\n")
 
 def vt_query(resource_value):
     params = {'apikey': vt_key, 'resource': resource_value, 'allinfo': '1'}
@@ -76,13 +107,6 @@ def is_in_misp_event(misp_event):
                 found = True
     return(found)
 
-def splash():
-    print ('Virustotal to MISP')
-    print ('(c)2018 eCrimeLabs')
-    print ('https://www.ecrimelabs.com')
-    print ('----------------------------------------')
-    print ('')
-
 if __name__ == '__main__':
     splash()
     parser = argparse.ArgumentParser()
@@ -97,10 +121,10 @@ if __name__ == '__main__':
         sys.exit()
     if re.fullmatch(r"([a-fA-F0-9\-]{36})", args.uuid, re.VERBOSE | re.MULTILINE):
         # 5b51eadd-7e9c-4015-b49c-3df79f590eb0
-        print ("- Checking if UUID is valid - true")
+        print ("- Checking if UUID format is valid - true")
     else:
     	# Match attempt failed
-        print ("Quitting -> The UUID was not in a valid format")
+        print ("Quitting -> The UUID format is not valid")
         sys.exit()
     misp = init(misp_url, misp_key)
     misp_event = misp.get_event(args.uuid)['Event']
@@ -113,6 +137,7 @@ if __name__ == '__main__':
         sys.exit()
     print ('- UUID for MISP event detected')
 
+    # Check if the hash is allready present as an attribut on the event.
     if (is_in_misp_event(misp_event)):
         print ('Quitting -> Checksum ' + args.checksum + ' allready exists on event')
         sys.exit()
