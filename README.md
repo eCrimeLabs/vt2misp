@@ -5,6 +5,9 @@ Script to fetch data from virustotal and add two specific objects to an event.
 
 Afterwards it will create a Relation between those two (file -> analysed-with -> virustotal-report)
 
+Small blog post on the tool
+https://www.ecrimelabs.com/blog/2018/7/21/tool-for-adding-hashes-with-virustotal-data-to-misp-event
+
 The script makes use of the public VirusTotal API
 In order to use the API you must sign up to VirusTotal Community(https://www.virustotal.com/#/join-us).
 Once you have a valid VirusTotal Community account you will find your personal API key in your personal settings section.
