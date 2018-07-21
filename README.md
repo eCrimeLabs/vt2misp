@@ -12,7 +12,7 @@ This key is all you need to use the VirusTotal API.
 
 Remember to create the file "keys.py":
 ```
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 misp_url = 'https://misp_instance/'
