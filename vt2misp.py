@@ -160,6 +160,9 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--uuid", help="The UUID of the event in MISP")
     parser.add_argument("-a", "--comment", help="Add comment to the file object, remember to enclose string in \"\" or ''")
     parser.add_argument("-f", "--force", help="Even if the hash is not found on VirusTotal still create the hash given as a file object", action='store_true')
+    if len(sys.argv)==1:
+    	parser.print_help(sys.stderr)
+    	sys.exit(1)    
     args = parser.parse_args()
 
     if (args.comment):
