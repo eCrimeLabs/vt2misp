@@ -49,7 +49,7 @@ def splash():
     print ("----------------------------------------\r\n")
 
 def init(misp_url, misp_key):
-    return PyMISP(misp_url, misp_key, misp_verifycert, 'json')
+    return PyMISP(misp_url, misp_key, misp_verifycert, 'json', debug=False)
 
 def create_objects(vt_results, event_dict, comments, forced):
     event = MISPEvent()
@@ -70,7 +70,9 @@ def create_objects(vt_results, event_dict, comments, forced):
         misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5)
         obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'], distribution=5)
         misp_object.add_attribute('detection-ratio', value=detection, distribution=5)
-        misp_object.add_attribute('comment', value=vt_data, disable_correlation=True, distribution=5)
+        if(args.verbose):
+            misp_object.add_attribute('comment', value=vt_data, disable_correlation=True, distribution=5)
+
         misp_object.add_attribute('last-submission', value=vt_results['scan_date'], disable_correlation=True, distribution=5)
         vt_obj_uuid = misp_object.uuid
         print ("\t* Permalink: " + vt_results['permalink'])
@@ -79,7 +81,6 @@ def create_objects(vt_results, event_dict, comments, forced):
 
     # Add File Object
     misp_object = event.add_object(name='file', comment=comments)
-#    if(vt_results['md5']):
     obj_attr = []
     try:
         misp_object.add_attribute('md5', value=vt_results['md5'], distribution=5)
@@ -96,8 +97,9 @@ def create_objects(vt_results, event_dict, comments, forced):
     except KeyError:
         vt_results['sha256'] = None
 
+    # Adding object to object relation
     if (vt_results['response_code'] == 1):
-        misp_object.add_reference(vt_obj_uuid, 'analysed-with', 'Expanded with virustotal data')
+        misp_object.add_reference(referenced_uuid=vt_obj_uuid, relationship_type='analysed-with', comment='Expanded with virustotal data')
 
     if not (vt_results['md5'] == None):
         print ("\t* MD5: " + vt_results['md5'])
@@ -160,9 +162,10 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--uuid", help="The UUID of the event in MISP")
     parser.add_argument("-a", "--comment", help="Add comment to the file object, remember to enclose string in \"\" or ''")
     parser.add_argument("-f", "--force", help="Even if the hash is not found on VirusTotal still create the hash given as a file object", action='store_true')
+    parser.add_argument("-v", "--verbose", help="Add verbose detection information from VT", action='store_true')
     if len(sys.argv)==1:
     	parser.print_help(sys.stderr)
-    	sys.exit(1)    
+    	sys.exit(1)
     args = parser.parse_args()
 
     if (args.comment):
