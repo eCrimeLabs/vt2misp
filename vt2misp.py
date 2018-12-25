@@ -67,7 +67,7 @@ def create_objects(vt_results, event_dict, comments, forced):
 
         detection = "%s/%s"% (vt_results['positives'],vt_results['total'])
         vt_comment = "File %s"% (vt_results['md5'])
-        misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5)
+        misp_object = event.add_object(name='virustotal-report', comment=vt_comment, distribution=5, standalone=False)
         obj_attr = misp_object.add_attribute('permalink', value=vt_results['permalink'], distribution=5)
         misp_object.add_attribute('detection-ratio', value=detection, distribution=5)
         if(args.verbose):
@@ -80,7 +80,7 @@ def create_objects(vt_results, event_dict, comments, forced):
         print ("\t* Last scan: " + vt_results['scan_date'] + "\r\n")
 
     # Add File Object
-    misp_object = event.add_object(name='file', comment=comments)
+    misp_object = event.add_object(name='file', comment=comments, standalone=False)
     obj_attr = []
     try:
         misp_object.add_attribute('md5', value=vt_results['md5'], distribution=5)
