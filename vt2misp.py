@@ -40,7 +40,7 @@ import pymisp
 from pymisp import MISPObject
 from pymisp import PyMISP
 from pymisp import MISPEvent
-from keys import misp_url, misp_key, misp_verifycert, vt_url, vt_key
+from keys import misp_url, misp_key, proxies, misp_verifycert, vt_url, vt_key
 
 def splash():
     print ('Virustotal to MISP')
@@ -49,7 +49,7 @@ def splash():
     print ("----------------------------------------\r\n")
 
 def init(misp_url, misp_key):
-    return PyMISP(misp_url, misp_key, misp_verifycert, 'json', debug=False)
+    return PyMISP(misp_url, misp_key, misp_verifycert, 'json', debug=False, proxies=proxies)
 
 def create_objects(vt_results, event_dict, comments, forced):
     event = MISPEvent()
@@ -134,7 +134,7 @@ def vt_query(resource_value, forced):
       "User-Agent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
     }
     response = requests.get(vt_url,
-      params=params, headers=headers)
+      params=params, headers=headers, proxies=proxies)
     json_response = response.json()
     if(json_response['response_code'] == 1):
         print ("- The artefact was found on Virustotal")

@@ -22,6 +22,11 @@ misp_url = 'https://misp_instance/'
 misp_key = '' # The MISP auth key can be found on the MISP web interface under the automation section
 misp_verifycert = True
 
+proxies = {
+    'https://127.0.0.1:8090',
+    'http://127.0.0.1:8090',
+}
+
 vt_url = 'https://www.virustotal.com/vtapi/v2/file/report'
 vt_key = 'API KEY'
 ```
@@ -48,7 +53,7 @@ https://www.ecrimelabs.com
 	* SHA1: 84c7201f7e59cb416280fd69a2e7f2e349ec8242
 	* SHA256: 54bc950d46a0d1aa72048a17c8275743209e6c17bdacfc4cb9601c9ce3ec9a71
 	------------
-	* VirusTotal detections: 
+	* VirusTotal detections:
 		Bkav (1.3.0.9466) Detection: W32.ZeustrackerZS.Trojan
 		MicroWorld-eScan (14.0.297.0) Detection: Gen:Variant.Kazy.8782
 		CMC (1.1.0.977) Detection: Trojan.Win32.Lebag!O
@@ -116,12 +121,12 @@ https://www.ecrimelabs.com
 		Panda (4.6.4.2) Detection: Trj/Ramnit.F
 		CrowdStrike (1.0) Detection: malicious_confidence_100% (W)
 		Qihoo-360 (1.0.0.1120) Detection: Win32/Trojan.544
-		
+
 	------------
-- The MISP objects seems to have been added correctly to the event.... 
+- The MISP objects seems to have been added correctly to the event....
 ```
 
-The tool will exit without adding anything to MISP in case the checksum(MD5, SHA1, SHA256) was not found on VirusTotal. 
-In some cases you might still want the value you have added to MISP then use the option -f or --force 
+The tool will exit without adding anything to MISP in case the checksum(MD5, SHA1, SHA256) was not found on VirusTotal.
+In some cases you might still want the value you have added to MISP then use the option -f or --force
 
 This allows you to easilier add additional informaiton should you get it later and it will then allready be in object format.
