@@ -23,8 +23,8 @@ misp_key = '' # The MISP auth key can be found on the MISP web interface under t
 misp_verifycert = True
 
 proxies = {
-    'https://127.0.0.1:8090',
-    'http://127.0.0.1:8090',
+    "http" : '127.0.0.1:8090',
+    "https": '127.0.0.1:8090'
 }
 
 vt_url = 'https://www.virustotal.com/vtapi/v2/file/report'
