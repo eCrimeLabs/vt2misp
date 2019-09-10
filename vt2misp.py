@@ -14,6 +14,9 @@ DeprecationWarning: Call to deprecated method __init__.
 This class will be an alias of ExpandedPyMISP early 2020 and your code will most probably fail.
 ---
 
+Late 2019 this code will convert to requiring Python 3.6+
+
+
 MIT License
 
 Copyright (c) 2019 Dennis Rand (https://www.ecrimelabs.com)
@@ -44,7 +47,6 @@ import argparse
 import string
 import json
 import pymisp
-import warnings
 from pymisp import MISPObject
 from pymisp import PyMISP
 from pymisp import MISPEvent
@@ -52,9 +54,6 @@ from keys import misp_url, misp_key, proxies, misp_verifycert, vt_url, vt_key
 
 if sys.version_info >= (3, 6, 0):
     from pymisp import ExpandedPyMISP
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
 
 def splash():
     print ('Virustotal to MISP')
