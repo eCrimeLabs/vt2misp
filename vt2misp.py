@@ -52,9 +52,9 @@ from keys import misp_url, misp_key, proxies, misp_verifycert, vt_url, vt_key
 
 if sys.version_info >= (3, 6, 0):
     from pymisp import ExpandedPyMISP
-else:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 def splash():
     print ('Virustotal to MISP')
