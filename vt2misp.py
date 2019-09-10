@@ -54,7 +54,7 @@ if sys.version_info >= (3, 6, 0):
     from pymisp import ExpandedPyMISP
 
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore', DeprecationWarning)
 
 def splash():
     print ('Virustotal to MISP')
