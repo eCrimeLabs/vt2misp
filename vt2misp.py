@@ -7,9 +7,16 @@
 
 Afterwards it will create a Relation between those two (file -> analysed-with -> virustotal-report)
 
+Please ensure that you early 2020 are using Python 3.6+
+---
+DeprecationWarning: Call to deprecated method __init__.
+(Please use ExpandedPyMISP instead (requires Python 3.6+).
+This class will be an alias of ExpandedPyMISP early 2020 and your code will most probably fail.
+---
+
 MIT License
 
-Copyright (c) 2018 Dennis Rand (https://www.ecrimelabs.com)
+Copyright (c) 2019 Dennis Rand (https://www.ecrimelabs.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,12 +44,17 @@ import argparse
 import string
 import json
 import pymisp
+import warnings
 from pymisp import MISPObject
 from pymisp import PyMISP
 from pymisp import MISPEvent
 from keys import misp_url, misp_key, proxies, misp_verifycert, vt_url, vt_key
+
 if sys.version_info >= (3, 6, 0):
     from pymisp import ExpandedPyMISP
+else:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
 def splash():
     print ('Virustotal to MISP')
