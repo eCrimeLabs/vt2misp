@@ -7,9 +7,19 @@
 
 Afterwards it will create a Relation between those two (file -> analysed-with -> virustotal-report)
 
+Please ensure that you early 2020 are using Python 3.6+
+---
+DeprecationWarning: Call to deprecated method __init__.
+(Please use ExpandedPyMISP instead (requires Python 3.6+).
+This class will be an alias of ExpandedPyMISP early 2020 and your code will most probably fail.
+---
+
+Late 2019 this code will convert to requiring Python 3.6+
+
+
 MIT License
 
-Copyright (c) 2018 Dennis Rand (https://www.ecrimelabs.com)
+Copyright (c) 2019 Dennis Rand (https://www.ecrimelabs.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,14 +52,20 @@ from pymisp import PyMISP
 from pymisp import MISPEvent
 from keys import misp_url, misp_key, proxies, misp_verifycert, vt_url, vt_key
 
+if sys.version_info >= (3, 6, 0):
+    from pymisp import ExpandedPyMISP
+
 def splash():
     print ('Virustotal to MISP')
-    print ('(c)2018 eCrimeLabs')
+    print ('(c)2019 eCrimeLabs')
     print ('https://www.ecrimelabs.com')
     print ("----------------------------------------\r\n")
 
 def init(misp_url, misp_key):
-    return PyMISP(misp_url, misp_key, misp_verifycert, 'json', debug=False, proxies=proxies)
+    if sys.version_info >= (3, 6, 0):
+        return ExpandedPyMISP(misp_url, misp_key, misp_verifycert, debug=False, proxies=proxies)
+    else:
+        return PyMISP(misp_url, misp_key, misp_verifycert, 'json', debug=False, proxies=proxies)
 
 def create_objects(vt_results, event_dict, comments, forced):
     event = MISPEvent()
@@ -120,7 +136,10 @@ def create_objects(vt_results, event_dict, comments, forced):
 
     try:
         # Submit the File and VT Objects to MISP
-        misp.update(event)
+        if sys.version_info >= (3, 6, 0):
+            misp.update_event(event)
+        else:
+            misp.update(event)
     except (KeyError, RuntimeError, TypeError, NameError):
         print ("An error occoured when updating the event")
         sys.exit()
@@ -143,7 +162,7 @@ def vt_query(resource_value, forced):
         if(forced):
             print ("- The artefact was NOT found on VirusTotal - Continues due to foce mode")
         else:
-            print ("Quitting -> The artifact was currently not present on VT")
+            print ("\r\n- Quitting -> The artifact was currently not present on VT")
             sys.exit()
 
 
@@ -177,14 +196,14 @@ if __name__ == '__main__':
         print ("- Checking if checksum is valid - true")
     else:
     	# Match attempt failed
-        print ("Quitting -> No Checksum detected - values has to be md5, sha1 or sha256")
+        print ("\r\n- Quitting -> No Checksum detected - values has to be md5, sha1 or sha256")
         sys.exit()
     if re.fullmatch(r"([a-fA-F0-9\-]{36})", args.uuid, re.VERBOSE | re.MULTILINE):
         # 5b51eadd-7e9c-4015-b49c-3df79f590eb0
         print ("- Checking if UUID format is valid - true")
     else:
     	# Match attempt failed
-        print ("Quitting -> The UUID format is not valid")
+        print ("\r\n- Quitting -> The UUID format is not valid")
         sys.exit()
     misp = init(misp_url, misp_key)
     misp_event = misp.get_event(args.uuid)['Event']
@@ -193,13 +212,13 @@ if __name__ == '__main__':
     try:
         misp_id = misp_event['id']
     except (KeyError, RuntimeError, TypeError, NameError):
-        print ("Quitting -> The MISP UUID you entered does not exists on the MISP instance.")
+        print ("\r\n- Quitting -> The MISP UUID you entered does not exists on the MISP instance.")
         sys.exit()
     print ('- UUID for MISP event detected')
 
     # Check if the hash is allready present as an attribut on the event.
     if (is_in_misp_event(misp_event)):
-        print ('Quitting -> Checksum ' + args.checksum + ' allready exists on event')
+        print ('\r\n- Quitting -> Checksum ' + args.checksum + ' allready exists on event')
         sys.exit()
     else:
         print ('- Checksum ' + args.checksum + ' was not detected in the event')
