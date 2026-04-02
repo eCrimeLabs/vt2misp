@@ -1,0 +1,15 @@
+# vt2misp import file
+# Format: hash,comment
+# Supported hash types: MD5 (32), SHA-1 (40), SHA-256 (64)
+# The comment column is optional
+#
+# Examples:
+44d88612fea8a8f36de82e1278abb02f,EICAR test file - MD5
+3395856ce81f2b7382dee72602f798b642f14d0,EICAR test file - SHA1
+275a021bbfb6489e54d471899f7db9d1663fc695b2628214ff1bfbe1a0a3bbdd,EICAR test file - SHA256
+242ba63a35e9647ca61c98081540460b,Suspicious file from phishing mail
+5d3f557ad0a0fa661cb5ce04e59b9ad5b917494f,Dropped by loader
+381e0e12e67a5c026529129a264844e7f1029114365ef3be465b72a3bec572c9,Base64 encoded EICAR
+f9a231c06d1818ba1ffc7316d00775a4,Final stage downloaded payload
+114659e7715685aa897e910400c025a7
+4365e2e6a499282cb6b8bfd3058923d40d2fc604, Email Attachment
